@@ -1,7 +1,7 @@
 """
 OpsEx Debt Scanner - Automated Operational Debt Detection
 Author: Michael Software
-Version: 2.0
+Version: 2.1
 
 This is the refactored, modular version with enhanced analytics.
 See config.py, validators.py, metrics.py, strategies.py for modules.
@@ -48,27 +48,78 @@ st.set_page_config(
     initial_sidebar_state=config.SIDEBAR_STATE
 )
 
+# Professional CSS Injection
 st.markdown(f"""
 <style>
+    /* Global Styles */
+    h1, h2, h3, h4, h5 {{ font-family: 'Segoe UI', sans-serif; }}
+    
+    /* Card Container Styles */
+    div[data-testid="column"] {{
+        background-color: transparent;
+    }}
+
+    /* Metric Card (Primary Bottleneck) */
     .metric-card {{
-        background-color: {config.COLOR_BACKGROUND};
-        border-left: 5px solid {config.COLOR_DEBT};
-        padding: 20px;
-        border-radius: 5px;
-        margin: 10px 0;
-    }}
-    .feature-card {{
-        background-color: #f8f9fa;
-        padding: 15px;
+        background-color: #ffffff;
+        border-left: 6px solid {config.COLOR_DEBT};
+        padding: 24px;
         border-radius: 8px;
-        margin-bottom: 10px;
-        border: 1px solid #e0e0e0;
+        margin: 15px 0;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        color: #31333F;
     }}
+    .metric-card h4 {{
+        margin-top: 0;
+        color: #1f1f1f;
+        font-weight: 600;
+    }}
+
+    /* Feature Cards (Landing Page) */
+    .feature-card {{
+        background-color: #ffffff;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        height: 100%;
+        min-height: 280px; /* Ensures uniform height */
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        color: #4f4f4f;
+    }}
+    .feature-card:hover {{
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        border-color: #d0d0d0;
+    }}
+    .feature-card h4 {{
+        color: #000000;
+        border-bottom: 2px solid #f0f2f6;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+    }}
+    .feature-card ul {{
+        padding-left: 20px;
+        line-height: 1.6;
+    }}
+
+    /* Status & Highlights */
     .status-ok {{ color: {config.COLOR_HEALTHY}; font-weight: bold; }}
     .status-debt {{ color: {config.COLOR_DEBT}; font-weight: bold; }}
-    .health-score {{ font-size: 28px; font-weight: bold; text-align: center; }}
-    .quick-win {{ background-color: #e8f5e9; padding: 10px; border-radius: 5px; margin: 5px 0; }}
-    h1, h2, h3, h4 {{ font-family: 'Segoe UI', sans-serif; }}
+    
+    /* Quick Wins Pill */
+    .quick-win {{
+        background-color: #e8f5e9;
+        color: #1b5e20;
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin: 8px 0;
+        border-left: 4px solid #4caf50;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -431,7 +482,7 @@ def main() -> None:
             """, unsafe_allow_html=True)
             
         st.markdown("---")
-        st.caption("v2.0 | Powered by Scikit-Learn, Pandas & Plotly")
+        st.caption("v2.1 | Powered by Scikit-Learn, Pandas & Plotly")
 
 if __name__ == "__main__":
     main()

@@ -17,7 +17,7 @@ def calculate_endpoint_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     metrics = df.groupby('Endpoint').agg({
         'Latency_ms': ['mean', 'median', 'std', 'min', 'max', 'count'],
-        'Status': lambda x: (x == 500).sum()
+        'Status': lambda x: (x >= 500).sum()  # Captures all 5xx errors: 500, 502, 503, 504, etc.
     }).round(2)
     
     metrics.columns = ['Mean_Latency', 'Median_Latency', 'Std_Dev',

@@ -16,6 +16,7 @@ import plotly.express as px # type: ignore
 import plotly.graph_objects as go # type: ignore
 from sklearn.ensemble import IsolationForest # type: ignore
 from datetime import datetime, timedelta
+from typing import Any
 import io
 import logging
 
@@ -75,7 +76,7 @@ def generate_system_logs(n_rows: int = 1000, debt_ratio: float = 0.05) -> pd.Dat
     """
     logger.info(f"Generating {n_rows} synthetic logs with {debt_ratio*100:.1f}% debt")
     
-    data: list[dict[str, any]] = []
+    data: list[dict[str, Any]] = []
     base_time = datetime.now()
     
     for i in range(n_rows):
@@ -187,17 +188,41 @@ def main() -> None:
                 if not uploaded_file:
                     st.error("❌ Please upload a CSV file")
                     return
-                raw_df = pd.read_csv(uploaded_file)
-                raw_df['Timestamp'] = pd.to_datetime(raw_df['Timestamp'])
                 
-                # Validate
-                is_valid, msg = validate_csv(raw_df)
-                if not is_valid:
-                    st.error(f"❌ {msg}")
-                    return
-                st.success(msg)
-                
-                raw_df = clean_data(raw_df)
+                try:
+                    raw_df = pd.read_csv(uploaded_file)
+                    
+                    # VALIDATION 1: Check Required Columns
+                    required_cols = {'Timestamp', 'Endpoint', 'Latency_ms', 'Status'}
+                    if not required_cols.issubset(raw_df.columns):
+                        missing = required_cols - set(raw_df.columns)
+                        st.error(f"❌ CSV Error: Missing required columns: {', '.join(missing)}")
+                        st.stop()
+                    
+                    # VALIDATION 2: Robust Date Parsing
+                    raw_df['Timestamp'] = pd.to_datetime(raw_df['Timestamp'], errors='coerce')
+                    invalid_timestamps = raw_df['Timestamp'].isnull().sum()
+                    if invalid_timestamps > 0:
+                        st.warning(f"⚠️ Dropped {invalid_timestamps} rows with invalid timestamps")
+                        raw_df = raw_df.dropna(subset=['Timestamp'])
+                    
+                    # VALIDATION 3: Check for Empty Dataset
+                    if raw_df.empty:
+                        st.error("❌ Dataset is empty after filtering invalid rows")
+                        st.stop()
+                    
+                    # VALIDATION 4: Standard CSV Validation
+                    is_valid, msg = validate_csv(raw_df)
+                    if not is_valid:
+                        st.error(f"❌ {msg}")
+                        st.stop()
+                    st.success(msg)
+                    
+                    raw_df = clean_data(raw_df)
+                    
+                except Exception as e:
+                    st.error(f"❌ Critical Error reading CSV: {str(e)}")
+                    st.stop()
             
             # ML
             processed_df = detect_operational_anomalies(raw_df.copy(), contamination)

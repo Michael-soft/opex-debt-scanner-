@@ -16,7 +16,6 @@ import plotly.express as px # type: ignore
 import plotly.graph_objects as go # type: ignore
 from sklearn.ensemble import IsolationForest # type: ignore
 from datetime import datetime, timedelta
-from typing import Any
 import io
 import logging
 
@@ -58,11 +57,18 @@ st.markdown(f"""
         border-radius: 5px;
         margin: 10px 0;
     }}
+    .feature-card {{
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #e0e0e0;
+    }}
     .status-ok {{ color: {config.COLOR_HEALTHY}; font-weight: bold; }}
     .status-debt {{ color: {config.COLOR_DEBT}; font-weight: bold; }}
     .health-score {{ font-size: 28px; font-weight: bold; text-align: center; }}
     .quick-win {{ background-color: #e8f5e9; padding: 10px; border-radius: 5px; margin: 5px 0; }}
-    h1, h2, h3 {{ font-family: 'Segoe UI', sans-serif; }}
+    h1, h2, h3, h4 {{ font-family: 'Segoe UI', sans-serif; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -76,7 +82,7 @@ def generate_system_logs(n_rows: int = 1000, debt_ratio: float = 0.05) -> pd.Dat
     """
     logger.info(f"Generating {n_rows} synthetic logs with {debt_ratio*100:.1f}% debt")
     
-    data: list[dict[str, Any]] = []
+    data: list[dict[str, any]] = []
     base_time = datetime.now()
     
     for i in range(n_rows):
@@ -188,41 +194,17 @@ def main() -> None:
                 if not uploaded_file:
                     st.error("❌ Please upload a CSV file")
                     return
+                raw_df = pd.read_csv(uploaded_file)
+                raw_df['Timestamp'] = pd.to_datetime(raw_df['Timestamp'])
                 
-                try:
-                    raw_df = pd.read_csv(uploaded_file)
-                    
-                    # VALIDATION 1: Check Required Columns
-                    required_cols = {'Timestamp', 'Endpoint', 'Latency_ms', 'Status'}
-                    if not required_cols.issubset(raw_df.columns):
-                        missing = required_cols - set(raw_df.columns)
-                        st.error(f"❌ CSV Error: Missing required columns: {', '.join(missing)}")
-                        st.stop()
-                    
-                    # VALIDATION 2: Robust Date Parsing
-                    raw_df['Timestamp'] = pd.to_datetime(raw_df['Timestamp'], errors='coerce')
-                    invalid_timestamps = raw_df['Timestamp'].isnull().sum()
-                    if invalid_timestamps > 0:
-                        st.warning(f"⚠️ Dropped {invalid_timestamps} rows with invalid timestamps")
-                        raw_df = raw_df.dropna(subset=['Timestamp'])
-                    
-                    # VALIDATION 3: Check for Empty Dataset
-                    if raw_df.empty:
-                        st.error("❌ Dataset is empty after filtering invalid rows")
-                        st.stop()
-                    
-                    # VALIDATION 4: Standard CSV Validation
-                    is_valid, msg = validate_csv(raw_df)
-                    if not is_valid:
-                        st.error(f"❌ {msg}")
-                        st.stop()
-                    st.success(msg)
-                    
-                    raw_df = clean_data(raw_df)
-                    
-                except Exception as e:
-                    st.error(f"❌ Critical Error reading CSV: {str(e)}")
-                    st.stop()
+                # Validate
+                is_valid, msg = validate_csv(raw_df)
+                if not is_valid:
+                    st.error(f"❌ {msg}")
+                    return
+                st.success(msg)
+                
+                raw_df = clean_data(raw_df)
             
             # ML
             processed_df = detect_operational_anomalies(raw_df.copy(), contamination)
@@ -404,31 +386,52 @@ def main() -> None:
         st.plotly_chart(fig_sev, use_container_width=True)
 
     else:
-        # Landing page
-        st.info("👈 Configure parameters and click **Run Scanner** to analyze system performance.")
+        # --- REFACTORED LANDING PAGE ---
+        st.info("👈 Configure parameters in the sidebar and click **Run Scanner** to begin analysis.")
         
-        st.markdown("---")
-        st.markdown("### ✨ Features")
-        st.markdown("""
-        - **CSV Upload**: Analyze real production logs
-        - **SLA Templates**: Aggressive/Standard/Relaxed monitoring
-        - **Percentiles**: P50/P75/P95/P99 tracking
-        - **Health Score**: Composite system health metric
-        - **Trend Detection**: Is latency improving or degrading?
-        - **Peak Hour Analysis**: When does system perform worst?
-        - **ROI Calculations**: Cost-benefit for each fix
-        - **Multi-Pattern Strategies**: 8+ endpoint types supported
-        - **Quick Wins**: Actionable optimization suggestions
-        """)
+        st.markdown("### ✨ Platform Capabilities")
         
+        # Feature Grid Layout
+        feat_c1, feat_c2, feat_c3 = st.columns(3)
+        
+        with feat_c1:
+            st.markdown("""
+            <div class="feature-card">
+                <h4>🛡️ Detection Engine</h4>
+                <ul>
+                    <li><b>Unsupervised ML:</b> Isolation Forest algorithm detects anomalies without manual thresholds.</li>
+                    <li><b>Silent Debt:</b> Identifies high-latency 200 OK requests.</li>
+                    <li><b>Dual Source:</b> Analyze uploaded CSVs or generate synthetic simulations.</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with feat_c2:
+            st.markdown("""
+            <div class="feature-card">
+                <h4>📊 Advanced Analytics</h4>
+                <ul>
+                    <li><b>ROI Calculator:</b> Quantify financial loss ($) per endpoint.</li>
+                    <li><b>SLA Monitoring:</b> Track P95/P99 compliance against Aggressive or Standard templates.</li>
+                    <li><b>Health Score:</b> Composite 0-100 score of system stability.</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with feat_c3:
+            st.markdown("""
+            <div class="feature-card">
+                <h4>🚀 Actionable Strategy</h4>
+                <ul>
+                    <li><b>Executive Agent:</b> Auto-generates refactoring plans (e.g., "Add Redis", "Index DB").</li>
+                    <li><b>Trend Analysis:</b> Detects if latency is degrading over time.</li>
+                    <li><b>Quick Wins:</b> Highlights lowest-effort, highest-impact fixes.</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
         st.markdown("---")
-        st.code("""
-# OpsEx Debt Scanner v2.0
-model = IsolationForest(contamination=0.05)
-anomalies = detect_operational_anomalies(df)
-roi = calculate_savings_per_endpoint(anomalies)
-health_score = generate_health_score(error_rate, sla_comp, trend)
-        """, language="python")
+        st.caption("v2.0 | Powered by Scikit-Learn, Pandas & Plotly")
 
 if __name__ == "__main__":
     main()
